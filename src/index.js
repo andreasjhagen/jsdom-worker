@@ -11,24 +11,27 @@ if (!global.URL.$$objects) {
 		return `blob:http://localhost/${id}`;
 	};
 
-	let oldFetch = global.fetch || fetch;
-	global.fetch = function(url, opts) {
-		if (url.match(/^blob:/)) {
-			return new Promise( (resolve, reject) => {
-				let fr = new FileReader();
-				fr.onload = () => {
-					let Res = global.Response || Response;
-					resolve(new Res(fr.result, { status: 200, statusText: 'OK' }));
+
+	try {
+		var oldFetch = global.fetch || fetch__default;
+		global.fetch = function (e, t) {
+			return new Promise(function (t, o) {
+				var n = new FileReader;
+				n.onload = function () {
+					var e = global.Response || fetch.Response;
+					t(new e(n.result, {
+						status: 200,
+						statusText: "OK"
+					}))
+				}, n.onerror = function () {
+					o(n.error)
 				};
-				fr.onerror = () => {
-					reject(fr.error);
-				};
-				let id = url.match(/[^/]+$/)[0];
-				fr.readAsText(global.URL.$$objects[id]);
-			});
+				var s = e.match(/[^/]+$/)[0];
+				n.readAsText(global.URL.$$objects[s])
+			})
 		}
-		return oldFetch.call(this, url, opts);
-	};
+	} catch (err) { }
+
 }
 
 if (!global.document) {
@@ -38,7 +41,7 @@ if (!global.document) {
 function Event(type) { this.type = type; }
 Event.prototype.initEvent = Object;
 if (!global.document.createEvent) {
-	global.document.createEvent = function(type) {
+	global.document.createEvent = function (type) {
 		let Ctor = global[type] || Event;
 		return new Ctor(type);
 	};
@@ -58,7 +61,7 @@ global.Worker = function Worker(url) {
 				outside.emit('message', { data });
 			},
 			fetch: global.fetch,
-			importScripts(...urls) {}
+			importScripts(...urls) { }
 		},
 		getScopeVar;
 	inside.on('message', e => { let f = getScopeVar('onmessage'); if (f) f.call(scope, e); });
@@ -67,21 +70,21 @@ global.Worker = function Worker(url) {
 	this.dispatchEvent = outside.emit;
 	outside.on('message', e => { this.onmessage && this.onmessage(e); });
 	this.postMessage = data => {
-		if (messageQueue!=null) messageQueue.push(data);
+		if (messageQueue != null) messageQueue.push(data);
 		else inside.emit('message', { data });
 	};
 	this.terminate = () => {
 		throw Error('Not Supported');
 	};
 	global.fetch(url)
-		.then( r => r.text() )
-		.then( code => {
+		.then(r => r.text())
+		.then(code => {
 			let vars = 'var self=this,global=self';
 			for (let k in scope) vars += `,${k}=self.${k}`;
-			getScopeVar = eval('(function() {'+vars+';\n'+code+'\nreturn function(__){return eval(__)}})').call(scope);
+			getScopeVar = eval('(function() {' + vars + ';\n' + code + '\nreturn function(__){return eval(__)}})').call(scope);
 			let q = messageQueue;
 			messageQueue = null;
 			q.forEach(this.postMessage);
 		})
-		.catch( e => { outside.emit('error', e); console.error(e); });
+		.catch(e => { });
 };

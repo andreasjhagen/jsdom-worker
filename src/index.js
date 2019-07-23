@@ -11,30 +11,24 @@ if (!global.URL.$$objects) {
 		return `blob:http://localhost/${id}`;
 	};
 
-	try {
-		let oldFetch = global.fetch || fetch;
-		global.fetch = function (url, opts) {
-			if (url.match(/^blob:/)) {
-				return new Promise((resolve, reject) => {
-					let fr = new FileReader();
-					fr.onload = () => {
-						let Res = global.Response || Response;
-						resolve(new Res(fr.result, { status: 200, statusText: 'OK' }));
-					};
-					fr.onerror = () => {
-						reject(fr.error);
-					};
-					let id = url.match(/[^/]+$/)[0];
-					fr.readAsText(global.URL.$$objects[id]);
-				});
-			}
-			return oldFetch.call(this, url, opts);
-		};
-	} catch (err) {
-
-	}
-
-
+	let oldFetch = global.fetch || fetch;
+	global.fetch = function (url, opts) {
+		if (url.match(/^blob:/)) {
+			return new Promise((resolve, reject) => {
+				let fr = new FileReader();
+				fr.onload = () => {
+					let Res = global.Response || Response;
+					resolve(new Res(fr.result, { status: 200, statusText: 'OK' }));
+				};
+				fr.onerror = () => {
+					reject(fr.error);
+				};
+				let id = url.match(/[^/]+$/)[0];
+				fr.readAsText(global.URL.$$objects[id]);
+			});
+		}
+		return oldFetch.call(this, url, opts);
+	};
 }
 
 if (!global.document) {
@@ -79,15 +73,19 @@ global.Worker = function Worker(url) {
 	this.terminate = () => {
 		throw Error('Not Supported');
 	};
-	global.fetch(url)
-		.then(r => r.text())
-		.then(code => {
-			let vars = 'var self=this,global=self';
-			for (let k in scope) vars += `,${k}=self.${k}`;
-			getScopeVar = eval('(function() {' + vars + '\n' + code + '\nreturn function(__){return eval(__)}})').call(scope);
-			let q = messageQueue;
-			messageQueue = null;
-			q.forEach(this.postMessage);
-		})
-		.catch(e => { });
+	try {
+		global.fetch(url)
+			.then(r => r.text())
+			.then(code => {
+				let vars = 'var self=this,global=self';
+				for (let k in scope) vars += `,${k}=self.${k}`;
+				getScopeVar = eval('(function() {' + vars + '\n' + code + '\nreturn function(__){return eval(__)}})').call(scope);
+				let q = messageQueue;
+				messageQueue = null;
+				q.forEach(this.postMessage);
+			})
+			.catch(e => { outside.emit('error', e); console.error(e); });
+	} catch (err) { }
+
+
 };

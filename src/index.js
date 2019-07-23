@@ -11,26 +11,29 @@ if (!global.URL.$$objects) {
 		return `blob:http://localhost/${id}`;
 	};
 
-
 	try {
-		var oldFetch = global.fetch || fetch__default;
-		global.fetch = function (e, t) {
-			return new Promise(function (t, o) {
-				var n = new FileReader;
-				n.onload = function () {
-					var e = global.Response || fetch.Response;
-					t(new e(n.result, {
-						status: 200,
-						statusText: "OK"
-					}))
-				}, n.onerror = function () {
-					o(n.error)
-				};
-				var s = e.match(/[^/]+$/)[0];
-				n.readAsText(global.URL.$$objects[s])
-			})
-		}
-	} catch (err) { }
+		let oldFetch = global.fetch || fetch;
+		global.fetch = function (url, opts) {
+			if (url.match(/^blob:/)) {
+				return new Promise((resolve, reject) => {
+					let fr = new FileReader();
+					fr.onload = () => {
+						let Res = global.Response || Response;
+						resolve(new Res(fr.result, { status: 200, statusText: 'OK' }));
+					};
+					fr.onerror = () => {
+						reject(fr.error);
+					};
+					let id = url.match(/[^/]+$/)[0];
+					fr.readAsText(global.URL.$$objects[id]);
+				});
+			}
+			return oldFetch.call(this, url, opts);
+		};
+	} catch (err) {
+
+	}
+
 
 }
 
@@ -81,7 +84,7 @@ global.Worker = function Worker(url) {
 		.then(code => {
 			let vars = 'var self=this,global=self';
 			for (let k in scope) vars += `,${k}=self.${k}`;
-			getScopeVar = eval('(function() {' + vars + ';\n' + code + '\nreturn function(__){return eval(__)}})').call(scope);
+			getScopeVar = eval('(function() {' + vars + '\n' + code + '\nreturn function(__){return eval(__)}})').call(scope);
 			let q = messageQueue;
 			messageQueue = null;
 			q.forEach(this.postMessage);

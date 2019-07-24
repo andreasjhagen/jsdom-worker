@@ -7,7 +7,7 @@
     "url": "https: //github.com/andreasjhagen/jsdom-worker"
   },
   "name": "jsdom-worker-fix",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "fixed jsdom-worker",
   "main": "dist/jsdom-worker.js",
   "module": "dist/jsdom-worker.m.js",

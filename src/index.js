@@ -73,19 +73,5 @@ global.Worker = function Worker(url) {
 	this.terminate = () => {
 		throw Error('Not Supported');
 	};
-	try {
-		global.fetch(url)
-			.then(r => r.text())
-			.then(code => {
-				let vars = 'var self=this,global=self';
-				for (let k in scope) vars += `,${k}=self.${k}`;
-				getScopeVar = eval('(function() {' + vars + '\n' + code + '\nreturn function(__){return eval(__)}})').call(scope);
-				let q = messageQueue;
-				messageQueue = null;
-				q.forEach(this.postMessage);
-			})
-			.catch(e => { outside.emit('error', e); console.error(e); });
-	} catch (err) { }
-
 
 };

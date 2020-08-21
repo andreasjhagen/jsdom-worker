@@ -71,7 +71,7 @@ global.Worker = function Worker(url) {
 		else inside.emit('message', { data });
 	};
 	this.terminate = () => {
-		throw Error('Not Supported');
+	  // Just do nothing...
 	};
 
 };
